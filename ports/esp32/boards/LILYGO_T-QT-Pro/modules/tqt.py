@@ -11,8 +11,9 @@ TFA = 1
 BFA = 3
 WIDE = 2
 TALL = 3
-SCROLL = 0      # orientation for scroll.py
-FEATHERS = 1    # orientation for feathers.py
+SCROLL = 0  # orientation for scroll.py
+FEATHERS = 1  # orientation for feathers.py
+
 
 def Display(rotation=0):
     """
@@ -28,8 +29,8 @@ def Display(rotation=0):
     custom_rotations = (
         (0x00, 128, 128, 2, 1, False),
         (0x60, 128, 128, 1, 2, False),
-        (0xc0, 128, 128, 2, 1, False),
-        (0xa0, 128, 128, 1, 2, False),
+        (0xC0, 128, 128, 2, 1, False),
+        (0xA0, 128, 128, 1, 2, False),
     )
 
     return st7789.ST7789(
@@ -39,14 +40,14 @@ def Display(rotation=0):
         reset=Pin(1, Pin.OUT),
         cs=Pin(5, Pin.OUT),
         dc=Pin(6, Pin.OUT),
-        #backlight=Pin(10, Pin.OUT),
+        backlight=Pin(10, Pin.OUT),
         rotation=rotation,
         custom_rotations=custom_rotations,
-        color_order=st7789.BGR
+        color_order=st7789.BGR,
     )
 
-class Buttons:
 
+class Buttons:
     def __init__(self):
         self.name = "t-qt-pro"
         self.left = Pin(0, Pin.IN)
