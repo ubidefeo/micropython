@@ -393,13 +393,18 @@ bool mp_emit_bc_end_pass(emit_t *emit) {
             mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("bytecode overflow"));
         }
 
+        #if MICROPY_PERSISTENT_CODE_SAVE || MICROPY_DEBUG_PRINTERS
+        size_t bytecode_len = emit->code_info_size + emit->bytecode_size;
+        #if MICROPY_DEBUG_PRINTERS
+        emit->scope->raw_code_data_len = bytecode_len;
+        #endif
+        #endif
+
         // Bytecode is finalised, assign it to the raw code object.
         mp_emit_glue_assign_bytecode(emit->scope->raw_code, emit->code_base,
-            #if MICROPY_PERSISTENT_CODE_SAVE || MICROPY_DEBUG_PRINTERS
-            emit->code_info_size + emit->bytecode_size,
-            #endif
             emit->emit_common->children,
             #if MICROPY_PERSISTENT_CODE_SAVE
+            bytecode_len,
             emit->emit_common->ct_cur_child,
             #endif
             emit->scope->scope_flags);
@@ -443,7 +448,6 @@ void mp_emit_bc_label_assign(emit_t *emit, mp_uint_t l) {
     // should be emitted (until another unconditional flow control).
     emit->suppress = false;
 
-    mp_emit_bc_adjust_stack_size(emit, 0);
     if (emit->pass == MP_PASS_SCOPE) {
         return;
     }
