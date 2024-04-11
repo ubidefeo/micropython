@@ -59,7 +59,7 @@ os.environ["PYTHONIOENCODING"] = "utf-8"
 
 # Code to allow a target MicroPython to import an .mpy from RAM
 injected_import_hook_code = """\
-import sys, os, io
+import sys, os, io, vfs
 class __File(io.IOBase):
   def __init__(self):
     self.off = 0
@@ -83,7 +83,7 @@ class __FS:
       raise OSError(-2) # ENOENT
   def open(self, path, mode):
     return __File()
-os.mount(__FS(), '/__vfstest')
+vfs.mount(__FS(), '/__vfstest')
 os.chdir('/__vfstest')
 __import__('__injected_test')
 """
@@ -183,7 +183,7 @@ special_tests = [
         "basics/bytes_compare3.py",
         "basics/builtin_help.py",
         "thread/thread_exc2.py",
-        "esp32/partition_ota.py",
+        "ports/esp32/partition_ota.py",
     )
 ]
 
@@ -532,6 +532,14 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
     if os.getenv("GITHUB_ACTIONS") == "true":
         skip_tests.add("thread/stress_schedule.py")  # has reliability issues
 
+        if os.getenv("RUNNER_OS") == "Windows":
+            # fails with stack overflow on Debug builds
+            skip_tests.add("misc/sys_settrace_features.py")
+
+            if os.getenv("MSYSTEM") is not None:
+                # fails due to wrong path separator
+                skip_tests.add("import/import_file.py")
+
     if upy_float_precision == 0:
         skip_tests.add("extmod/uctypes_le_float.py")
         skip_tests.add("extmod/uctypes_native_float.py")
@@ -635,9 +643,7 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
     # Some tests are known to fail with native emitter
     # Remove them from the below when they work
     if args.emit == "native":
-        skip_tests.update(
-            {"basics/%s.py" % t for t in "gen_yield_from_close generator_name".split()}
-        )  # require raise_varargs, generator name
+        skip_tests.add("basics/gen_yield_from_close.py")  # require raise_varargs
         skip_tests.update(
             {"basics/async_%s.py" % t for t in "with with2 with_break with_return".split()}
         )  # require async_with
@@ -648,7 +654,6 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
         skip_tests.add("basics/del_deref.py")  # requires checking for unbound local
         skip_tests.add("basics/del_local.py")  # requires checking for unbound local
         skip_tests.add("basics/exception_chain.py")  # raise from is not supported
-        skip_tests.add("basics/fun_name.py")  # requires proper names for native functions
         skip_tests.add("basics/scope_implicit.py")  # requires checking for unbound local
         skip_tests.add("basics/sys_tracebacklimit.py")  # requires traceback info
         skip_tests.add("basics/try_finally_return2.py")  # requires raise_varargs
@@ -1036,16 +1041,16 @@ the last matching regex is used:
             )
             if args.target == "pyboard":
                 # run pyboard tests
-                test_dirs += ("float", "stress", "pyb", "inlineasm")
+                test_dirs += ("float", "stress", "inlineasm", "ports/stm32")
             elif args.target in ("renesas-ra"):
-                test_dirs += ("float", "inlineasm", "renesas-ra")
+                test_dirs += ("float", "inlineasm", "ports/renesas-ra")
             elif args.target == "rp2":
-                test_dirs += ("float", "stress", "inlineasm", "thread")
+                test_dirs += ("float", "stress", "inlineasm", "thread", "ports/rp2")
             elif args.target in ("esp8266", "esp32", "minimal", "nrf"):
                 test_dirs += ("float",)
             elif args.target == "wipy":
                 # run WiPy tests
-                test_dirs += ("wipy",)
+                test_dirs += ("ports/cc3200",)
             elif args.target == "unix":
                 # run PC tests
                 test_dirs += (
@@ -1054,8 +1059,8 @@ the last matching regex is used:
                     "io",
                     "stress",
                     "unicode",
-                    "unix",
                     "cmdline",
+                    "ports/unix",
                 )
             elif args.target == "qemu-arm":
                 if not args.write_exp:
@@ -1065,7 +1070,7 @@ the last matching regex is used:
                 test_dirs += (
                     "float",
                     "inlineasm",
-                    "qemu-arm",
+                    "ports/qemu-arm",
                 )
         else:
             # run tests from these directories
