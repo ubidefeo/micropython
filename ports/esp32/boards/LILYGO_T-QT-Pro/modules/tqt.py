@@ -15,7 +15,7 @@ SCROLL = 0  # orientation for scroll.py
 FEATHERS = 1  # orientation for feathers.py
 
 
-def Display(rotation=0):
+def Display(rotation=2):
     """
     Configures and returns an instance of the ST7789 display driver.
 
@@ -41,6 +41,7 @@ def Display(rotation=0):
         cs=Pin(5, Pin.OUT),
         dc=Pin(6, Pin.OUT),
         backlight=Pin(10, Pin.OUT),
+        backlight_on_state=0,
         rotation=rotation,
         custom_rotations=custom_rotations,
         color_order=st7789.BGR,

@@ -267,6 +267,7 @@ class ST7789:
         dc=None,
         cs=None,
         backlight=None,
+        backlight_on_state=0,
         rotation=0,
         color_order=BGR,
         custom_init=None,
@@ -296,6 +297,7 @@ class ST7789:
         self.dc = dc
         self.cs = cs
         self.backlight = backlight
+        self.backlight_on_state = backlight_on_state
         self._rotation = rotation % 4
         self.color_order = color_order
         self.init_cmds = custom_init or _ST7789_INIT_CMDS
@@ -308,7 +310,7 @@ class ST7789:
         self.fill(0x0)
 
         if backlight is not None:
-            backlight.value(1)
+            backlight.value(backlight_on_state)
 
     @staticmethod
     def _find_rotations(width, height):
@@ -324,6 +326,20 @@ class ST7789:
         for command, data, delay in commands:
             self._write(command, data)
             sleep_ms(delay)
+
+    def backlight_on(self):
+        """
+        Turn on the backlight.
+        """
+        if self.backlight:
+            self.backlight.value(self.backlight_on_state)
+
+    def backlight_off(self):
+        """
+        Turn off the backlight.
+        """
+        if self.backlight:
+            self.backlight.value(not self.backlight_on_state)
 
     def _write(self, command=None, data=None):
         """SPI write to the device: commands and data."""
@@ -477,9 +493,7 @@ class ST7789:
         self._set_window(x, y, x, y)
         self._write(
             None,
-            struct.pack(
-                _ENCODE_PIXEL_SWAPPED if self.needs_swap else _ENCODE_PIXEL, color
-            ),
+            struct.pack(_ENCODE_PIXEL_SWAPPED if self.needs_swap else _ENCODE_PIXEL, color),
         )
 
     def blit_buffer(self, buffer, x, y, width, height):
@@ -525,9 +539,7 @@ class ST7789:
         """
         self._set_window(x, y, x + width - 1, y + height - 1)
         chunks, rest = divmod(width * height, _BUFFER_SIZE)
-        pixel = struct.pack(
-            _ENCODE_PIXEL_SWAPPED if self.needs_swap else _ENCODE_PIXEL, color
-        )
+        pixel = struct.pack(_ENCODE_PIXEL_SWAPPED if self.needs_swap else _ENCODE_PIXEL, color)
         self.dc.on()
         if chunks:
             data = pixel * _BUFFER_SIZE
@@ -618,8 +630,8 @@ class ST7789:
     @staticmethod
     def _pack8(glyphs, idx: uint, fg_color: uint, bg_color: uint):
         buffer = bytearray(128)
-        bitmap = ptr16(buffer)
-        glyph = ptr8(glyphs)
+        bitmap = ptr16(buffer)  # noqa: F821
+        glyph = ptr8(glyphs)  # noqa: F821
 
         for i in range(0, 64, 8):
             byte = glyph[idx]
@@ -649,8 +661,8 @@ class ST7789:
         """
 
         buffer = bytearray(256)
-        bitmap = ptr16(buffer)
-        glyph = ptr8(glyphs)
+        bitmap = ptr16(buffer)  # noqa: F821
+        glyph = ptr8(glyphs)  # noqa: F821
 
         for i in range(0, 128, 16):
             byte = glyph[idx]
@@ -765,9 +777,7 @@ class ST7789:
         """
         fg_color = color if self.needs_swap else ((color << 8) & 0xFF00) | (color >> 8)
         bg_color = (
-            background
-            if self.needs_swap
-            else ((background << 8) & 0xFF00) | (background >> 8)
+            background if self.needs_swap else ((background << 8) & 0xFF00) | (background >> 8)
         )
 
         if font.WIDTH == 8:
@@ -846,9 +856,7 @@ class ST7789:
                 color_index = 0
                 for _ in range(bpp):
                     color_index <<= 1
-                    color_index |= (
-                        bitmap.BITMAP[bs_bit // 8] & 1 << (7 - (bs_bit % 8))
-                    ) > 0
+                    color_index |= (bitmap.BITMAP[bs_bit // 8] & 1 << (7 - (bs_bit % 8))) > 0
                     bs_bit += 1
                 color = palette[color_index]
                 if needs_swap:
@@ -970,14 +978,10 @@ class ST7789:
                 (
                     x
                     + center_x
-                    + int(
-                        (point[0] - center_x) * cos_a - (point[1] - center_y) * sin_a
-                    ),
+                    + int((point[0] - center_x) * cos_a - (point[1] - center_y) * sin_a),
                     y
                     + center_y
-                    + int(
-                        (point[0] - center_x) * sin_a + (point[1] - center_y) * cos_a
-                    ),
+                    + int((point[0] - center_x) * sin_a + (point[1] - center_y) * cos_a),
                 )
                 for point in points
             ]
