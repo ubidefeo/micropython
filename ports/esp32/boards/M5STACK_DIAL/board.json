@@ -1,0 +1,22 @@
+{
+    "deploy": [
+        "../deploy_s3.md"
+    ],
+    "docs": "",
+    "features": [
+        "BLE",
+        "External Flash",
+        "WiFi"
+    ],
+    "images": [
+        "generic_s3.jpg"
+    ],
+    "mcu": "esp32s3",
+    "product": "M5Stack Dial",
+    "thumbnail": "",
+    "url": "https://docs.m5stack.com/en/core/M5Dial",
+    "vendor": "M5Stack",
+    "variants": {
+        "FLASH_8M": "8MiB flash"
+    }
+}
